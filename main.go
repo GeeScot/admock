@@ -4,55 +4,86 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/gurparit/go-common/httpc"
+	"github.com/gurparit/go-common/httputil"
+	"github.com/patrickmn/go-cache"
 	"golang.org/x/net/dns/dnsmessage"
 	"net"
 	"net/http"
+	"time"
 )
 
 var baseURL1 = "https://1.1.1.1/dns-query?dns=%s"
 var baseURL2 = "https://1.0.0.1/dns-query?dns=%s"
 
-func waitForDNS(conn *net.UDPConn) (string, *net.UDPAddr, error) {
+func waitForDNS(conn *net.UDPConn) (*dnsmessage.Message, string, *net.UDPAddr, error) {
 	buf := make([]byte, 512)
 	_, addr, err := conn.ReadFromUDP(buf)
 	if err != nil {
-		return "", nil, errors.New("[err] invalid udp packet")
+		return nil, "", nil, errors.New("[err] invalid udp packet")
 	}
 
 	var m dnsmessage.Message
 	err = m.Unpack(buf)
 	if err != nil {
-		return "", nil, err
+		return nil, "", nil, err
 	}
 
 	packed, err := m.Pack()
-	return base64.RawURLEncoding.EncodeToString(packed), addr, err
+	return &m, base64.RawURLEncoding.EncodeToString(packed), addr, err
 }
 
 func fetchDNSoverTLS(query string) ([]byte, error) {
-	req := httpc.HTTP{
-		TargetURL: httpc.FormatURL(baseURL1, query),
+	headers := httputil.Headers{"accept": "application/dns-message"}
+	req := httputil.HTTP{
+		TargetURL: httputil.FormatURL(baseURL1, query),
 		Method:    http.MethodGet,
-		Headers:   httpc.Headers{"accept": "application/dns-message"},
+		Headers:   headers,
 	}
 
 	return req.Raw()
 }
 
+func isBlacklistDomain(dns dnsmessage.Message) ([]byte, bool) {
+	domain := dns.Questions[0].Name.String()
+	_, found := inMemoryCache.Get(domain)
+	if !found {
+		return nil, false
+	}
+
+	fakeDNS := NewFakeDNS(dns.Header.ID, domain)
+	packed, err := fakeDNS.Pack()
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, false
+	}
+
+	return packed, true
+}
+
+// Cache shared in-memory cache
+var inMemoryCache *cache.Cache
+
 func main() {
+	inMemoryCache = cache.New(5*time.Minute, 10*time.Minute)
+
 	conn, _ := net.ListenUDP("udp", &net.UDPAddr{Port: 53})
 	defer conn.Close()
 
+	LoadBlacklists(inMemoryCache)
+
 	for {
-		encodedQuery, addr, err := waitForDNS(conn)
+		dns, encodedQuery, addr, err := waitForDNS(conn)
 		if err != nil {
 			fmt.Println(err.Error())
 			continue
 		}
 
-		result, err := fetchDNSoverTLS(encodedQuery)
+		if fakeDNS, blacklisted := isBlacklistDomain(*dns); blacklisted {
+			conn.WriteToUDP(fakeDNS, addr)
+			continue
+		}
 
+		result, err := fetchDNSoverTLS(encodedQuery)
 		conn.WriteToUDP(result, addr)
 	}
 }
