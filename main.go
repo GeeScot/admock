@@ -60,11 +60,32 @@ func isBlacklistDomain(dns dnsmessage.Message) ([]byte, bool) {
 	return packed, true
 }
 
-// Cache shared in-memory cache
+func isCachedDomain(encodedQuery string) ([]byte, bool) {
+	cachedItem, found := inMemoryCache.Get(encodedQuery)
+	if !found {
+		return nil, false
+	}
+
+	cachedDNS := cachedItem.([]byte)
+	return cachedDNS, true
+}
+
+func addToCache(key string, record []byte) {
+	// var m dnsmessage.Message
+	// err := m.Unpack(record)
+	// if err != nil {
+	// 	fmt.Println(err.Error())
+	// 	return
+	// }
+
+	// fmt.Println(m)
+	inMemoryCache.Set(key, record, 3600*time.Second)
+}
+
 var inMemoryCache *cache.Cache
 
 func main() {
-	inMemoryCache = cache.New(5*time.Minute, 10*time.Minute)
+	inMemoryCache = cache.New(3600*time.Minute, 10*time.Minute)
 
 	conn, _ := net.ListenUDP("udp", &net.UDPAddr{Port: 53})
 	defer conn.Close()
@@ -83,7 +104,13 @@ func main() {
 			continue
 		}
 
+		if cachedDNS, cached := isCachedDomain(encodedQuery); cached {
+			conn.WriteToUDP(cachedDNS, addr)
+			continue
+		}
+
 		result, err := fetchDNSoverTLS(encodedQuery)
+		addToCache(encodedQuery, result)
 		conn.WriteToUDP(result, addr)
 	}
 }
