@@ -2,14 +2,14 @@ package dns
 
 import "golang.org/x/net/dns/dnsmessage"
 
-// Cache entry
-type Cache struct {
+// Record entry
+type Record struct {
 	Header dnsmessage.ResourceHeader
 	Body   dnsmessage.ResourceBody
 }
 
 // NewAnswer creates a new DNS answer
-func NewAnswer(id uint16, question dnsmessage.Question, dns Cache) dnsmessage.Message {
+func NewAnswer(id uint16, question dnsmessage.Question, dns Record) dnsmessage.Message {
 	answer := dnsmessage.Resource{
 		Header: dns.Header,
 		Body:   dns.Body,
@@ -36,5 +36,5 @@ func NewMockAnswer(id uint16, question dnsmessage.Question) dnsmessage.Message {
 		A: [4]byte{0, 0, 0, 0},
 	}
 
-	return NewAnswer(id, question, Cache{Header: header, Body: body})
+	return NewAnswer(id, question, Record{Header: header, Body: body})
 }

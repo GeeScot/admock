@@ -74,7 +74,7 @@ func isCachedDomain(id uint16, question dnsmessage.Question) ([]byte, bool) {
 		return nil, false
 	}
 
-	cachedDNS := cachedItem.(dns.Cache)
+	cachedDNS := cachedItem.(dns.Record)
 	dnsMessage := dns.NewAnswer(id, question, cachedDNS)
 	data, _ := dnsMessage.Pack()
 	return data, true
@@ -96,7 +96,7 @@ func addToCache(record []byte) {
 	header := m.Answers[0].Header
 	ttl := header.TTL
 
-	inMemoryCache.Set(domain, dns.Cache{Header: header, Body: body}, time.Duration(ttl)*time.Second)
+	inMemoryCache.Set(domain, dns.Record{Header: header, Body: body}, time.Duration(ttl)*time.Second)
 }
 
 var blacklistCache *cache.Cache
