@@ -8,7 +8,6 @@ import (
 	"github.com/gurparit/go-common/fileio"
 	"github.com/gurparit/go-common/httputil"
 	"github.com/patrickmn/go-cache"
-	"golang.org/x/net/dns/dnsmessage"
 )
 
 func isWhitelisted(whitelist []string, search string) bool {
@@ -29,37 +28,6 @@ type Adlist struct {
 
 	Blacklist []string `json:"blacklist"`
 	Whitelist []string `json:"whitelist"`
-}
-
-// NewFakeDNS get a fake dns record
-func NewFakeDNS(id uint16, domain string) dnsmessage.Message {
-	name := dnsmessage.MustNewName(domain)
-	fakeARecord := dnsmessage.AResource{
-		A: [4]byte{0, 0, 0, 0},
-	}
-
-	question := dnsmessage.Question{
-		Name:  name,
-		Type:  dnsmessage.TypeA,
-		Class: dnsmessage.ClassINET,
-	}
-	answer := dnsmessage.Resource{
-		Header: dnsmessage.ResourceHeader{
-			Name:  name,
-			Type:  dnsmessage.TypeA,
-			Class: dnsmessage.ClassINET,
-			TTL:   7200,
-		},
-		Body: &fakeARecord,
-	}
-
-	dnsRecord := dnsmessage.Message{
-		Header:    dnsmessage.Header{Response: true, ID: id},
-		Questions: []dnsmessage.Question{question},
-		Answers:   []dnsmessage.Resource{answer},
-	}
-
-	return dnsRecord
 }
 
 func fetchBlacklist(c *cache.Cache, source string, whitelist []string) {

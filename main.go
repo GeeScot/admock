@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gurparit/fastdns/dns"
 	"github.com/gurparit/go-common/httputil"
 	"github.com/patrickmn/go-cache"
 	"golang.org/x/net/dns/dnsmessage"
@@ -16,24 +17,30 @@ import (
 var baseURL1 = "https://1.1.1.1/dns-query?dns=%s"
 var baseURL2 = "https://1.0.0.1/dns-query?dns=%s"
 
-func waitForDNS(conn *net.UDPConn) (*dnsmessage.Message, string, *net.UDPAddr, error) {
+func waitForDNS(conn *net.UDPConn) (*dnsmessage.Message, *net.UDPAddr, error) {
 	buf := make([]byte, 512)
 	_, addr, err := conn.ReadFromUDP(buf)
 	if err != nil {
-		return nil, "", nil, errors.New("[err] invalid udp packet")
+		return nil, nil, errors.New("[err] invalid udp packet")
 	}
 
 	var m dnsmessage.Message
 	err = m.Unpack(buf)
 	if err != nil {
-		return nil, "", nil, err
+		return nil, nil, err
 	}
 
-	packed, err := m.Pack()
-	return &m, base64.RawURLEncoding.EncodeToString(packed), addr, err
+	return &m, addr, err
 }
 
-func fetchDNSoverTLS(query string) ([]byte, error) {
+func fetchDNSoverTLS(m *dnsmessage.Message) ([]byte, error) {
+	packed, err := m.Pack()
+	if err != nil {
+		panic(err)
+	}
+
+	query := base64.RawURLEncoding.EncodeToString(packed)
+
 	headers := httputil.Headers{"accept": "application/dns-message"}
 	req := httputil.HTTP{
 		TargetURL: httputil.FormatURL(baseURL1, query),
@@ -44,14 +51,14 @@ func fetchDNSoverTLS(query string) ([]byte, error) {
 	return req.Raw()
 }
 
-func isBlacklistDomain(dns dnsmessage.Message) ([]byte, bool) {
-	domain := dns.Questions[0].Name.String()
+func isBlacklistDomain(message dnsmessage.Message) ([]byte, bool) {
+	domain := message.Questions[0].Name.String()
 	_, found := blacklistCache.Get(domain)
 	if !found {
 		return nil, false
 	}
 
-	fakeDNS := NewFakeDNS(dns.Header.ID, domain)
+	fakeDNS := dns.NewMockAnswer(message.Header.ID, message.Questions[0])
 	packed, err := fakeDNS.Pack()
 	if err != nil {
 		panic(err)
@@ -60,43 +67,17 @@ func isBlacklistDomain(dns dnsmessage.Message) ([]byte, bool) {
 	return packed, true
 }
 
-func isCachedDomain(id uint16, domain string) ([]byte, bool) {
+func isCachedDomain(id uint16, question dnsmessage.Question) ([]byte, bool) {
+	domain := question.Name.String()
 	cachedItem, found := inMemoryCache.Get(domain)
 	if !found {
 		return nil, false
 	}
 
-	cachedDNS := cachedDNSRecord(id, domain, cachedItem)
-	data, _ := cachedDNS.Pack()
+	cachedDNS := cachedItem.(dns.Cache)
+	dnsMessage := dns.NewAnswer(id, question, cachedDNS)
+	data, _ := dnsMessage.Pack()
 	return data, true
-}
-
-func cachedDNSRecord(id uint16, domain string, resouceBody interface{}) dnsmessage.Message {
-	name := dnsmessage.MustNewName(domain)
-	record := resouceBody.(dnsmessage.ResourceBody)
-
-	question := dnsmessage.Question{
-		Name:  name,
-		Type:  dnsmessage.TypeA,
-		Class: dnsmessage.ClassINET,
-	}
-	answer := dnsmessage.Resource{
-		Header: dnsmessage.ResourceHeader{
-			Name:  name,
-			Type:  dnsmessage.TypeA,
-			Class: dnsmessage.ClassINET,
-			TTL:   1,
-		},
-		Body: record,
-	}
-
-	dnsRecord := dnsmessage.Message{
-		Header:    dnsmessage.Header{Response: true, ID: id},
-		Questions: []dnsmessage.Question{question},
-		Answers:   []dnsmessage.Resource{answer},
-	}
-
-	return dnsRecord
 }
 
 func addToCache(record []byte) {
@@ -111,10 +92,11 @@ func addToCache(record []byte) {
 		return
 	}
 
-	value := m.Answers[0].Body
-	ttl := m.Answers[0].Header.TTL
+	body := m.Answers[0].Body
+	header := m.Answers[0].Header
+	ttl := header.TTL
 
-	inMemoryCache.Set(domain, value, time.Duration(ttl)*time.Second)
+	inMemoryCache.Set(domain, dns.Cache{Header: header, Body: body}, time.Duration(ttl)*time.Second)
 }
 
 var blacklistCache *cache.Cache
@@ -138,7 +120,7 @@ func main() {
 	for {
 		defer dontPanic()
 
-		dns, encodedQuery, addr, err := waitForDNS(conn)
+		dns, addr, err := waitForDNS(conn)
 		if err != nil {
 			panic(err)
 		}
@@ -148,12 +130,12 @@ func main() {
 			continue
 		}
 
-		if cachedDNS, cached := isCachedDomain(dns.Header.ID, dns.Questions[0].Name.String()); cached {
+		if cachedDNS, cached := isCachedDomain(dns.Header.ID, dns.Questions[0]); cached {
 			conn.WriteToUDP(cachedDNS, addr)
 			continue
 		}
 
-		result, err := fetchDNSoverTLS(encodedQuery)
+		result, err := fetchDNSoverTLS(dns)
 		addToCache(result)
 		conn.WriteToUDP(result, addr)
 	}
