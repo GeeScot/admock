@@ -109,8 +109,11 @@ func dontPanic() {
 }
 
 func main() {
-	blacklistCache = cache.New(3600*time.Minute, 10*time.Minute)
-	inMemoryCache = cache.New(3600*time.Minute, 10*time.Minute)
+	defaultExpiration := 3600 * time.Second
+	defaultEviction := 7200 * time.Second
+
+	blacklistCache = cache.New(defaultExpiration, defaultEviction)
+	inMemoryCache = cache.New(defaultExpiration, defaultEviction)
 
 	conn, _ := net.ListenUDP("udp", &net.UDPAddr{Port: 53})
 	defer conn.Close()
