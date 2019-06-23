@@ -9,16 +9,19 @@ type Record struct {
 }
 
 // NewAnswer creates a new DNS answer
-func NewAnswer(id uint16, question dnsmessage.Question, dns Record) dnsmessage.Message {
-	answer := dnsmessage.Resource{
-		Header: dns.Header,
-		Body:   dns.Body,
+func NewAnswer(id uint16, question dnsmessage.Question, records []dnsmessage.Resource) dnsmessage.Message {
+	answers := []dnsmessage.Resource{}
+	for _, record := range records {
+		answers = append(answers, dnsmessage.Resource{
+			Header: record.Header,
+			Body:   record.Body,
+		})
 	}
 
 	dnsRecord := dnsmessage.Message{
 		Header:    dnsmessage.Header{Response: true, ID: id},
 		Questions: []dnsmessage.Question{question},
-		Answers:   []dnsmessage.Resource{answer},
+		Answers:   answers,
 	}
 
 	return dnsRecord
@@ -36,5 +39,7 @@ func NewMockAnswer(id uint16, question dnsmessage.Question) dnsmessage.Message {
 		A: [4]byte{0, 0, 0, 0},
 	}
 
-	return NewAnswer(id, question, Record{Header: header, Body: body})
+	return NewAnswer(id, question, []dnsmessage.Resource{
+		dnsmessage.Resource{Header: header, Body: body},
+	})
 }

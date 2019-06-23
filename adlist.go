@@ -5,20 +5,11 @@ import (
 	"net/http"
 	"regexp"
 
+	"github.com/gurparit/fastdns/array"
 	"github.com/gurparit/go-common/fileio"
 	"github.com/gurparit/go-common/httputil"
 	"github.com/patrickmn/go-cache"
 )
-
-func isWhitelisted(whitelist []string, search string) bool {
-	for _, domain := range whitelist {
-		if domain == search {
-			return true
-		}
-	}
-
-	return false
-}
 
 // Adlist adlist source file
 type Adlist struct {
@@ -45,16 +36,11 @@ func fetchBlacklist(c *cache.Cache, source string, whitelist []string) {
 	domainsRegex, _ := regexp.Compile("(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]")
 	domains := domainsRegex.FindAllString(data, -1)
 	for _, domain := range domains {
-		if isWhitelisted(whitelist, domain) {
+		if array.Contains(whitelist, domain) {
 			continue
 		}
 
-		if _, alreadyCached := c.Get(domain); alreadyCached {
-			continue
-		}
-
-		canonicalDomain := domain + "."
-		c.Set(canonicalDomain, canonicalDomain, cache.NoExpiration)
+		c.Set(domain+".", "0.0.0.0", cache.NoExpiration)
 	}
 }
 

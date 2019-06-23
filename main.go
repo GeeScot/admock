@@ -69,14 +69,15 @@ func isBlacklistDomain(message dnsmessage.Message) ([]byte, bool) {
 
 func isCachedDomain(id uint16, question dnsmessage.Question) ([]byte, bool) {
 	domain := question.Name.String()
-	cachedItem, found := inMemoryCache.Get(domain)
+	item, found := inMemoryCache.Get(domain)
 	if !found {
 		return nil, false
 	}
 
-	cachedDNS := cachedItem.(dns.Record)
-	dnsMessage := dns.NewAnswer(id, question, cachedDNS)
-	data, _ := dnsMessage.Pack()
+	records := item.([]dnsmessage.Resource)
+	m := dns.NewAnswer(id, question, records)
+
+	data, _ := m.Pack()
 	return data, true
 }
 
@@ -92,11 +93,10 @@ func addToCache(record []byte) {
 		return
 	}
 
-	body := m.Answers[0].Body
 	header := m.Answers[0].Header
 	ttl := header.TTL
 
-	inMemoryCache.Set(domain, dns.Record{Header: header, Body: body}, time.Duration(ttl)*time.Second)
+	inMemoryCache.Set(domain, m.Answers, time.Duration(ttl)*time.Second)
 }
 
 var blacklistCache *cache.Cache
