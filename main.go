@@ -4,12 +4,13 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/gurparit/go-common/httputil"
-	"github.com/patrickmn/go-cache"
-	"golang.org/x/net/dns/dnsmessage"
 	"net"
 	"net/http"
 	"time"
+
+	"github.com/gurparit/go-common/httputil"
+	"github.com/patrickmn/go-cache"
+	"golang.org/x/net/dns/dnsmessage"
 )
 
 var baseURL1 = "https://1.1.1.1/dns-query?dns=%s"
