@@ -1,1 +1,4 @@
+bin
 fastdns
+build.sh
+.DS_Store
