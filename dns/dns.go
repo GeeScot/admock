@@ -10,18 +10,10 @@ type Record struct {
 
 // NewAnswer creates a new DNS answer
 func NewAnswer(id uint16, question dnsmessage.Question, records []dnsmessage.Resource) dnsmessage.Message {
-	answers := []dnsmessage.Resource{}
-	for _, record := range records {
-		answers = append(answers, dnsmessage.Resource{
-			Header: record.Header,
-			Body:   record.Body,
-		})
-	}
-
 	dnsRecord := dnsmessage.Message{
 		Header:    dnsmessage.Header{Response: true, ID: id},
 		Questions: []dnsmessage.Question{question},
-		Answers:   answers,
+		Answers:   records,
 	}
 
 	return dnsRecord

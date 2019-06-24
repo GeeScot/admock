@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"time"
@@ -115,7 +116,11 @@ func main() {
 	blacklistCache = cache.New(defaultExpiration, defaultEviction)
 	inMemoryCache = cache.New(defaultExpiration, defaultEviction)
 
-	conn, _ := net.ListenUDP("udp", &net.UDPAddr{Port: 53})
+	conn, err := net.ListenUDP("udp", &net.UDPAddr{Port: 53})
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	defer conn.Close()
 
 	LoadBlacklists(blacklistCache)
