@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/gurparit/fastdns/array"
+	"github.com/gurparit/go-common/array"
 	"github.com/gurparit/go-common/fileio"
 	"github.com/gurparit/go-common/httputil"
 	"github.com/patrickmn/go-cache"
@@ -50,7 +50,7 @@ func LoadBlacklists(c *cache.Cache) {
 	fileio.ReadJSON("adlist.json", &adlist)
 
 	for _, source := range adlist.External.Blacklists {
-		go fetchBlacklist(c, source, adlist.Whitelist)
+		fetchBlacklist(c, source, adlist.Whitelist)
 	}
 
 	for _, domain := range adlist.Blacklist {

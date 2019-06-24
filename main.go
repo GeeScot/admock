@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"sync"
 	"time"
 
 	"github.com/gurparit/fastdns/cloudflare"
@@ -29,7 +30,7 @@ func waitForDNS(conn *net.UDPConn) (*dnsmessage.Message, *net.UDPAddr, error) {
 	return &m, addr, err
 }
 
-func isBlacklistDomain(message dnsmessage.Message) ([]byte, bool) {
+func isBlacklistDomain(message *dnsmessage.Message) ([]byte, bool) {
 	domain := message.Questions[0].Name.String()
 	_, found := blacklistCache.Get(domain)
 	if !found {
@@ -86,24 +87,14 @@ func dontPanic() {
 	}
 }
 
-func main() {
-	defaultExpiration := 3600 * time.Second
-	defaultEviction := 7200 * time.Second
-
-	blacklistCache = cache.New(defaultExpiration, defaultEviction)
-	inMemoryCache = cache.New(defaultExpiration, defaultEviction)
-
+func run() {
 	conn, err := net.ListenUDP("udp", &net.UDPAddr{Port: 53})
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	defer conn.Close()
-
-	// not entirely self contained if load blacklists happens before we are ready to listen for queries. 
-	// encapsulate the query listener below and set it up before LoadBlacklists is called.
-	// start channel before load blacklists and then listen and respond in forever for loop?
-	LoadBlacklists(blacklistCache)
+	defer wg.Done()
 
 	for {
 		defer dontPanic()
@@ -113,7 +104,7 @@ func main() {
 			panic(err)
 		}
 
-		if fakeDNS, blacklisted := isBlacklistDomain(*dns); blacklisted {
+		if fakeDNS, blacklisted := isBlacklistDomain(dns); blacklisted {
 			conn.WriteToUDP(fakeDNS, addr)
 			continue
 		}
@@ -127,8 +118,25 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		
+
 		addToCache(result)
 		conn.WriteToUDP(result, addr)
 	}
+}
+
+var wg sync.WaitGroup
+
+func main() {
+	defaultExpiration := 3600 * time.Second
+	defaultEviction := 7200 * time.Second
+
+	blacklistCache = cache.New(defaultExpiration, defaultEviction)
+	inMemoryCache = cache.New(defaultExpiration, defaultEviction)
+
+	wg.Add(1)
+
+	go run()
+	go LoadBlacklists(blacklistCache)
+
+	wg.Wait()
 }

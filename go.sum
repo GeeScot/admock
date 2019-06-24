@@ -4,6 +4,10 @@ github.com/gurparit/go-common v0.0.2 h1:uCJRGmjzaY5kVBVIFPrZ+OAkWgGYvQGfj2jjMeB7
 github.com/gurparit/go-common v0.0.2/go.mod h1:jhVfp3hDq9bBIm1RAe8SVrPFhBdVWdwmbQ2dJRtR7Xg=
 github.com/gurparit/go-common v0.0.3 h1:PMZYYZb1A33+g/rkulQdw+JWOxzG0JRcuHhcOBTWU5I=
 github.com/gurparit/go-common v0.0.3/go.mod h1:jhVfp3hDq9bBIm1RAe8SVrPFhBdVWdwmbQ2dJRtR7Xg=
+github.com/gurparit/go-common v0.0.4 h1:bq/bzk8aR6MHp/lQwM3B55EmizrdBMM+IaOPrffFFDY=
+github.com/gurparit/go-common v0.0.4/go.mod h1:jhVfp3hDq9bBIm1RAe8SVrPFhBdVWdwmbQ2dJRtR7Xg=
+github.com/gurparit/go-common v0.0.5 h1:a8yb1Y020iUxiuAfJAmXhY4irI85VYcBlhV3SaIPaCY=
+github.com/gurparit/go-common v0.0.5/go.mod h1:jhVfp3hDq9bBIm1RAe8SVrPFhBdVWdwmbQ2dJRtR7Xg=
 github.com/patrickmn/go-cache v2.1.0+incompatible h1:HRMgzkcYKYpi3C8ajMPV8OFXaaRUnok+kx1WdO15EQc=
 github.com/patrickmn/go-cache v2.1.0+incompatible/go.mod h1:3Qf8kWWT7OJRJbdiICTKqZju1ZixQ/KpMGzzAfe6+WQ=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
