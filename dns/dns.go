@@ -9,11 +9,11 @@ type Record struct {
 }
 
 // NewAnswer creates a new DNS answer
-func NewAnswer(id uint16, question dnsmessage.Question, records []dnsmessage.Resource) dnsmessage.Message {
+func NewAnswer(id uint16, question dnsmessage.Question, answers []dnsmessage.Resource) dnsmessage.Message {
 	dnsRecord := dnsmessage.Message{
 		Header:    dnsmessage.Header{Response: true, ID: id},
 		Questions: []dnsmessage.Question{question},
-		Answers:   records,
+		Answers:   answers,
 	}
 
 	return dnsRecord
