@@ -121,6 +121,10 @@ func main() {
 		}
 
 		result, err := cloudflare.AskQuestion(dns)
+		if err != nil {
+			panic(err)
+		}
+		
 		addToCache(result)
 		conn.WriteToUDP(result, addr)
 	}
