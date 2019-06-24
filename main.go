@@ -102,6 +102,7 @@ func main() {
 
 	// not entirely self contained if load blacklists happens before we are ready to listen for queries. 
 	// encapsulate the query listener below and set it up before LoadBlacklists is called.
+	// start channel before load blacklists and then listen and respond in forever for loop?
 	LoadBlacklists(blacklistCache)
 
 	for {
