@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gurparit/fastdns/acl"
 	"github.com/gurparit/fastdns/cloudflare"
 	"github.com/gurparit/fastdns/dns"
 	"github.com/patrickmn/go-cache"
@@ -136,7 +137,7 @@ func main() {
 	wg.Add(1)
 
 	go run()
-	go LoadBlacklists(blacklistCache)
+	go acl.LoadBlacklists(blacklistCache)
 
 	wg.Wait()
 }
