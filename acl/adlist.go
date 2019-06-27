@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"sync"
 
 	"github.com/gurparit/go-common/array"
 	"github.com/gurparit/go-common/fileio"
 	"github.com/gurparit/go-common/httputil"
-	"github.com/patrickmn/go-cache"
 )
 
 // Adlist adlist source file
@@ -21,7 +21,11 @@ type Adlist struct {
 	Whitelist []string `json:"whitelist"`
 }
 
-func fetchBlacklist(c *cache.Cache, source string, whitelist []string) {
+func fetchBlacklist(wg *sync.WaitGroup, c *StringCache, source string, whitelist []string) {
+	defer wg.Done()
+
+	fmt.Printf("Get: %s\n", source)
+
 	req := httputil.HTTP{
 		TargetURL: source,
 		Method:    http.MethodGet,
@@ -40,20 +44,30 @@ func fetchBlacklist(c *cache.Cache, source string, whitelist []string) {
 			continue
 		}
 
-		c.Set(domain+".", "0.0.0.0", cache.NoExpiration)
+		c.Add(domain + ".")
 	}
+
+	fmt.Printf("Done: %s\n", source)
 }
 
 // LoadBlacklists cache all blacklists
-func LoadBlacklists(c *cache.Cache) {
+func LoadBlacklists() *StringCache {
 	var adlist Adlist
 	fileio.ReadJSON("adlist.json", &adlist)
 
+	cache := New()
+
+	var wg sync.WaitGroup
 	for _, source := range adlist.External.Blacklists {
-		fetchBlacklist(c, source, adlist.Whitelist)
+		wg.Add(1)
+		go fetchBlacklist(&wg, cache, source, adlist.Whitelist)
 	}
 
 	for _, domain := range adlist.Blacklist {
-		c.Set(domain, domain, cache.NoExpiration)
+		cache.Add(domain)
 	}
+
+	wg.Wait()
+
+	return cache
 }

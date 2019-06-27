@@ -33,7 +33,7 @@ func waitForDNS(conn *net.UDPConn) (*dnsmessage.Message, *net.UDPAddr, error) {
 
 func isBlacklistDomain(message *dnsmessage.Message) ([]byte, bool) {
 	domain := message.Questions[0].Name.String()
-	_, found := blacklistCache.Get(domain)
+	found := blacklist.Contains(domain)
 	if !found {
 		return nil, false
 	}
@@ -79,13 +79,38 @@ func addToCache(record []byte) {
 	inMemoryCache.Set(domain, m.Answers, time.Duration(ttl)*time.Second)
 }
 
-var blacklistCache *cache.Cache
+var blacklist *acl.StringCache
 var inMemoryCache *cache.Cache
 
 func dontPanic() {
 	if r := recover(); r != nil {
 		fmt.Println("[recovered] ", r)
 	}
+}
+
+func handleQuery(conn *net.UDPConn, addr *net.UDPAddr, dns *dnsmessage.Message) {
+	fmt.Printf("[Ask] %s\n", dns.Questions[0].Name)
+
+	if fakeDNS, blacklisted := isBlacklistDomain(dns); blacklisted {
+		fmt.Printf("[Blocked] %s\n", dns.Questions[0].Name)
+		conn.WriteToUDP(fakeDNS, addr)
+		return
+	}
+
+	if cachedDNS, cached := isCachedDomain(dns.Header.ID, dns.Questions[0]); cached {
+		fmt.Printf("[Cached] %s\n", dns.Questions[0].Name)
+		conn.WriteToUDP(cachedDNS, addr)
+		return
+	}
+
+	result, err := cloudflare.AskQuestion(dns)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("[Fetched] %s\n", dns.Questions[0].Name)
+	addToCache(result)
+	conn.WriteToUDP(result, addr)
 }
 
 func run() {
@@ -105,23 +130,7 @@ func run() {
 			panic(err)
 		}
 
-		if fakeDNS, blacklisted := isBlacklistDomain(dns); blacklisted {
-			conn.WriteToUDP(fakeDNS, addr)
-			continue
-		}
-
-		if cachedDNS, cached := isCachedDomain(dns.Header.ID, dns.Questions[0]); cached {
-			conn.WriteToUDP(cachedDNS, addr)
-			continue
-		}
-
-		result, err := cloudflare.AskQuestion(dns)
-		if err != nil {
-			panic(err)
-		}
-
-		addToCache(result)
-		conn.WriteToUDP(result, addr)
+		go handleQuery(conn, addr, dns)
 	}
 }
 
@@ -131,13 +140,22 @@ func main() {
 	defaultExpiration := 3600 * time.Second
 	defaultEviction := 7200 * time.Second
 
-	blacklistCache = cache.New(defaultExpiration, defaultEviction)
 	inMemoryCache = cache.New(defaultExpiration, defaultEviction)
 
 	wg.Add(1)
 
 	go run()
-	go acl.LoadBlacklists(blacklistCache)
+
+	start := time.Now().Unix()
+	go func() {
+		blacklist = acl.LoadBlacklists()
+		blacklist.Sort()
+		end := time.Now().Unix()
+
+		elapsed := end - start
+
+		fmt.Printf("\nBlacklisted %d domains in %d seconds.\n", blacklist.Size, elapsed)
+	}()
 
 	wg.Wait()
 }

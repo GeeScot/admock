@@ -15,7 +15,6 @@
   ],
   "whitelist": [
     "google.com",
-    "play.google.com",
     "github.com",
     "raw.githubusercontent.com",
     "localhost.localdomain",
