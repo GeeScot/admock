@@ -1,9 +1,11 @@
-package acl
+package cache
 
 import (
 	"sort"
 	"sync"
+
 	"github.com/gurparit/go-common/array"
+	"github.com/gurparit/go-common/math"
 )
 
 // StringCache simple sorted key cache
@@ -59,7 +61,11 @@ func (sc *StringCache) Contains(value string) bool {
 	defer sc.mux.Unlock()
 
 	i := sort.SearchStrings(sc.data, value)
-	s := sc.data[i-1:i+1]
+
+	start := math.Max(i-1, 0)
+	end := math.Min(i+1, sc.Size)
+
+	s := sc.data[start:end]
 
 	return array.Contains(s, value)
 }

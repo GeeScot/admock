@@ -5,7 +5,9 @@ import (
 	"net/http"
 	"regexp"
 	"sync"
+	"time"
 
+	"github.com/gurparit/fastdns/cache"
 	"github.com/gurparit/go-common/array"
 	"github.com/gurparit/go-common/fileio"
 	"github.com/gurparit/go-common/httputil"
@@ -21,7 +23,7 @@ type Adlist struct {
 	Whitelist []string `json:"whitelist"`
 }
 
-func fetchBlacklist(wg *sync.WaitGroup, c *StringCache, source string, whitelist []string) {
+func fetchBlacklist(wg *sync.WaitGroup, c *cache.StringCache, source string, whitelist []string) {
 	defer wg.Done()
 
 	fmt.Printf("Get: %s\n", source)
@@ -51,11 +53,11 @@ func fetchBlacklist(wg *sync.WaitGroup, c *StringCache, source string, whitelist
 }
 
 // LoadBlacklists cache all blacklists
-func LoadBlacklists() *StringCache {
+func LoadBlacklists(cache *cache.StringCache) {
 	var adlist Adlist
 	fileio.ReadJSON("adlist.json", &adlist)
 
-	cache := New()
+	start := time.Now().Unix()
 
 	var wg sync.WaitGroup
 	for _, source := range adlist.External.Blacklists {
@@ -69,5 +71,8 @@ func LoadBlacklists() *StringCache {
 
 	wg.Wait()
 
-	return cache
+	end := time.Now().Unix()
+	elapsed := end - start
+
+	fmt.Printf("\nBlacklisted %d domains in %d seconds.\n", cache.Size, elapsed)
 }
