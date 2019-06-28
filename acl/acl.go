@@ -55,7 +55,7 @@ func fetchBlacklist(wg *sync.WaitGroup, c *cache.StringCache, source string, whi
 // LoadBlacklists cache all blacklists
 func LoadBlacklists(cache *cache.StringCache) {
 	var adlist Adlist
-	fileio.ReadJSON("adlist.json", &adlist)
+	fileio.ReadJSON("config.json", &adlist)
 
 	start := time.Now().Unix()
 
