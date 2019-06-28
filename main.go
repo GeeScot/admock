@@ -88,11 +88,13 @@ func dontPanic() {
 
 func handleQuery(conn *net.UDPConn, addr *net.UDPAddr, dns *dnsmessage.Message) {
 	if fakeDNS, blacklisted := isBlacklistDomain(dns); blacklisted {
+		LogMessage("[FromBlacklist] %s\n", dns.Questions[0].Name.String())
 		conn.WriteToUDP(fakeDNS, addr)
 		return
 	}
 
 	if cachedDNS, cached := isCachedDomain(dns.Header.ID, dns.Questions[0]); cached {
+		LogMessage("[FromCache] %s\n", dns.Questions[0].Name.String())
 		conn.WriteToUDP(cachedDNS, addr)
 		return
 	}
@@ -102,6 +104,7 @@ func handleQuery(conn *net.UDPConn, addr *net.UDPAddr, dns *dnsmessage.Message) 
 		panic(err)
 	}
 
+	LogMessage("[FromSource] %s\n", dns.Questions[0].Name.String())
 	addToCache(result)
 	conn.WriteToUDP(result, addr)
 }
@@ -132,7 +135,20 @@ var dnsCache *gocache.Cache
 
 var wg sync.WaitGroup
 
+var debug bool
+
+// LogMessage prints log messages if debug is true
+func LogMessage(message string, params ...string) {
+	if !debug {
+		return
+	}
+
+	fmt.Printf(message, params)
+}
+
 func main() {
+	debug = true
+
 	defaultExpiration := 3600 * time.Second
 	defaultEviction := 7200 * time.Second
 
