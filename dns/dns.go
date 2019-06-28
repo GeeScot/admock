@@ -1,6 +1,9 @@
 package dns
 
-import "golang.org/x/net/dns/dnsmessage"
+import (
+	"github.com/gurparit/go-common/math"
+	"golang.org/x/net/dns/dnsmessage"
+)
 
 // Record entry
 type Record struct {
@@ -34,4 +37,24 @@ func NewMockAnswer(id uint16, question dnsmessage.Question) dnsmessage.Message {
 	return NewAnswer(id, question, []dnsmessage.Resource{
 		dnsmessage.Resource{Header: header, Body: body},
 	})
+}
+
+// Domain get domain from a dns question
+func Domain(message *dnsmessage.Message) string {
+	return message.Questions[0].Name.String()
+}
+
+// ID get dns message id from a dns message
+func ID(message *dnsmessage.Message) uint16 {
+	return message.Header.ID
+}
+
+// TTL return time to live
+func TTL(message *dnsmessage.Message) uint16 {
+	maxTTL := 0
+	for _, answer := range message.Answers {
+		maxTTL = math.Max(maxTTL, int(answer.Header.TTL))
+	}
+
+	return uint16(maxTTL)
 }

@@ -12,11 +12,10 @@ import (
 	"github.com/gurparit/fastdns/cache"
 	"github.com/gurparit/fastdns/cloudflare"
 	"github.com/gurparit/fastdns/dns"
-	gocache "github.com/patrickmn/go-cache"
 	"golang.org/x/net/dns/dnsmessage"
 )
 
-func waitForDNS(conn *net.UDPConn) (*dnsmessage.Message, *net.UDPAddr, error) {
+func listen(conn *net.UDPConn) (*dnsmessage.Message, *net.UDPAddr, error) {
 	buf := make([]byte, 512)
 	_, addr, err := conn.ReadFromUDP(buf)
 	if err != nil {
@@ -33,7 +32,8 @@ func waitForDNS(conn *net.UDPConn) (*dnsmessage.Message, *net.UDPAddr, error) {
 }
 
 func isBlacklistDomain(message *dnsmessage.Message) ([]byte, bool) {
-	domain := message.Questions[0].Name.String()
+	domain := dns.Domain(message)
+
 	found := blacklist.Contains(domain)
 	if !found {
 		return nil, false
@@ -41,72 +41,58 @@ func isBlacklistDomain(message *dnsmessage.Message) ([]byte, bool) {
 
 	fakeDNS := dns.NewMockAnswer(message.Header.ID, message.Questions[0])
 	packed, err := fakeDNS.Pack()
-	if err != nil {
-		panic(err)
-	}
+	catch(err)
 
 	return packed, true
 }
 
-func isCachedDomain(id uint16, question dnsmessage.Question) ([]byte, bool) {
-	domain := question.Name.String()
-	item, found := dnsCache.Get(domain)
+func isCachedDomain(message *dnsmessage.Message) ([]byte, bool) {
+	domain := dns.Domain(message)
+
+	records, found := dnsCache.Get(domain)
 	if !found {
 		return nil, false
 	}
 
-	records := item.([]dnsmessage.Resource)
+	question := message.Questions[0]
+
+	id := dns.ID(message)
 	m := dns.NewAnswer(id, question, records)
 
 	data, _ := m.Pack()
 	return data, true
 }
 
-func addToCache(record []byte) {
+func addCache(record []byte) {
 	var m dnsmessage.Message
 	err := m.Unpack(record)
-	if err != nil {
-		panic(err)
-	}
+	catch(err)
 
-	domain := m.Questions[0].Name.String()
+	domain := dns.Domain(&m)
 	if len(m.Answers) <= 0 {
 		return
 	}
 
-	header := m.Answers[0].Header
-	ttl := header.TTL
-
-	dnsCache.Set(domain, m.Answers, time.Duration(ttl)*time.Second)
+	ttl := dns.TTL(&m)
+	dnsCache.AddWithExpiry(domain, m.Answers, time.Duration(ttl))
 }
 
-func dontPanic() {
-	if r := recover(); r != nil {
-		fmt.Println("[recovered] ", r)
-	}
-}
-
-func handleQuery(conn *net.UDPConn, addr *net.UDPAddr, dns *dnsmessage.Message) {
-	if fakeDNS, blacklisted := isBlacklistDomain(dns); blacklisted {
-		LogMessage("[FromBlacklist] %s\n", dns.Questions[0].Name.String())
-		conn.WriteToUDP(fakeDNS, addr)
+func handleQuery(conn *net.UDPConn, addr *net.UDPAddr, message *dnsmessage.Message) {
+	if dns, found := isBlacklistDomain(message); found {
+		conn.WriteToUDP(dns, addr)
 		return
 	}
 
-	if cachedDNS, cached := isCachedDomain(dns.Header.ID, dns.Questions[0]); cached {
-		LogMessage("[FromCache] %s\n", dns.Questions[0].Name.String())
-		conn.WriteToUDP(cachedDNS, addr)
+	if dns, found := isCachedDomain(message); found {
+		conn.WriteToUDP(dns, addr)
 		return
 	}
 
-	result, err := cloudflare.AskQuestion(dns)
-	if err != nil {
-		panic(err)
-	}
+	dns, err := cloudflare.AskQuestion(message)
+	catch(err)
 
-	LogMessage("[FromSource] %s\n", dns.Questions[0].Name.String())
-	addToCache(result)
-	conn.WriteToUDP(result, addr)
+	addCache(dns)
+	conn.WriteToUDP(dns, addr)
 }
 
 func run() {
@@ -119,50 +105,40 @@ func run() {
 	defer wg.Done()
 
 	for {
-		defer dontPanic()
+		defer try()
 
-		dns, addr, err := waitForDNS(conn)
-		if err != nil {
-			panic(err)
-		}
+		dns, addr, err := listen(conn)
+		catch(err)
 
 		go handleQuery(conn, addr, dns)
 	}
 }
 
 var blacklist *cache.StringCache
-var dnsCache *gocache.Cache
+var dnsCache *cache.ResourceCache
 
 var wg sync.WaitGroup
 
-var debug bool
-
-// LogMessage prints log messages if debug is true
-func LogMessage(message string, params ...string) {
-	if !debug {
-		return
+func try() {
+	if r := recover(); r != nil {
+		fmt.Println("[recovered] ", r)
 	}
+}
 
-	fmt.Printf(message, params)
+func catch(err error) {
+	if err != nil {
+		panic(err)
+	}
 }
 
 func main() {
-	debug = true
-
-	defaultExpiration := 3600 * time.Second
-	defaultEviction := 7200 * time.Second
-
-	dnsCache = gocache.New(defaultExpiration, defaultEviction)
-	blacklist = cache.New()
+	blacklist = cache.Strings()
+	dnsCache = cache.Resources()
 
 	wg.Add(1)
 
 	go run()
-
-	go func() {
-		acl.LoadBlacklists(blacklist)
-		blacklist.Sort()
-	}()
+	go acl.LoadBlacklists(blacklist)
 
 	wg.Wait()
 }

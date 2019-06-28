@@ -71,6 +71,8 @@ func LoadBlacklists(cache *cache.StringCache) {
 
 	wg.Wait()
 
+	cache.Sort()
+
 	end := time.Now().Unix()
 	elapsed := end - start
 

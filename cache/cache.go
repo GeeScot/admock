@@ -15,8 +15,8 @@ type StringCache struct {
 	Size int
 }
 
-// New create new cache
-func New() *StringCache {
+// Strings create new string cache
+func Strings() *StringCache {
 	return &StringCache{
 		mux:  sync.Mutex{},
 		data: []string{},
