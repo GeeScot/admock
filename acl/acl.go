@@ -3,6 +3,7 @@ package acl
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"regexp"
 	"sync"
 	"time"
@@ -13,8 +14,8 @@ import (
 	"github.com/gurparit/go-common/httputil"
 )
 
-// Adlist adlist source file
-type Adlist struct {
+// AccessControlLists access control source file
+type AccessControlLists struct {
 	External struct {
 		Blacklists []string `json:"blacklists"`
 	} `json:"external"`
@@ -54,18 +55,23 @@ func fetchBlacklist(wg *sync.WaitGroup, c *cache.StringCache, source string, whi
 
 // Load cache all blacklists
 func Load(cache *cache.StringCache) {
-	var adlist Adlist
-	fileio.ReadJSON("config.json", &adlist)
+	config := os.Getenv("FASTDNS_CONFIG")
+	if len(config) <= 0 {
+		return
+	}
+
+	var lists AccessControlLists
+	fileio.ReadJSON(config, &lists)
 
 	start := time.Now().Unix()
 
 	var wg sync.WaitGroup
-	for _, source := range adlist.External.Blacklists {
+	for _, source := range lists.External.Blacklists {
 		wg.Add(1)
-		go fetchBlacklist(&wg, cache, source, adlist.Whitelist)
+		go fetchBlacklist(&wg, cache, source, lists.Whitelist)
 	}
 
-	for _, domain := range adlist.Blacklist {
+	for _, domain := range lists.Blacklist {
 		cache.Add(domain)
 	}
 

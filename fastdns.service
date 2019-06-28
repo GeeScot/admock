@@ -1,0 +1,12 @@
+[Unit]
+Description=fastdns
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5s
+Environment=FASTDNS_CONFIG=/etc/fastdns/config.json
+ExecStart=/usr/local/fastdns
+
+[Install]
+WantedBy=multi-user.target
