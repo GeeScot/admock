@@ -31,7 +31,7 @@ func listen(conn *net.UDPConn) (*dnsmessage.Message, *net.UDPAddr, error) {
 	return &m, addr, err
 }
 
-func isBlacklistDomain(message *dnsmessage.Message) ([]byte, bool) {
+func isDomainBlacklisted(message *dnsmessage.Message) ([]byte, bool) {
 	domain := dns.Domain(message)
 
 	found := blacklist.Contains(domain)
@@ -46,7 +46,7 @@ func isBlacklistDomain(message *dnsmessage.Message) ([]byte, bool) {
 	return packed, true
 }
 
-func isCachedDomain(message *dnsmessage.Message) ([]byte, bool) {
+func isDomainCached(message *dnsmessage.Message) ([]byte, bool) {
 	domain := dns.Domain(message)
 
 	records, found := dnsCache.Get(domain)
@@ -78,12 +78,12 @@ func addCache(record []byte) {
 }
 
 func handleQuery(conn *net.UDPConn, addr *net.UDPAddr, message *dnsmessage.Message) {
-	if dns, found := isBlacklistDomain(message); found {
+	if dns, found := isDomainBlacklisted(message); found {
 		conn.WriteToUDP(dns, addr)
 		return
 	}
 
-	if dns, found := isCachedDomain(message); found {
+	if dns, found := isDomainCached(message); found {
 		conn.WriteToUDP(dns, addr)
 		return
 	}
