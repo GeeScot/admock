@@ -138,7 +138,7 @@ func main() {
 	wg.Add(1)
 
 	go run()
-	go acl.LoadBlacklists(blacklist)
+	go acl.Load(blacklist)
 
 	wg.Wait()
 }

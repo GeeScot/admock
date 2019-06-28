@@ -52,8 +52,8 @@ func fetchBlacklist(wg *sync.WaitGroup, c *cache.StringCache, source string, whi
 	fmt.Printf("Done: %s\n", source)
 }
 
-// LoadBlacklists cache all blacklists
-func LoadBlacklists(cache *cache.StringCache) {
+// Load cache all blacklists
+func Load(cache *cache.StringCache) {
 	var adlist Adlist
 	fileio.ReadJSON("config.json", &adlist)
 
