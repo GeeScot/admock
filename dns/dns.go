@@ -1,6 +1,8 @@
 package dns
 
 import (
+	"encoding/base64"
+
 	"github.com/gurparit/go-common/math"
 	"golang.org/x/net/dns/dnsmessage"
 )
@@ -57,4 +59,11 @@ func TTL(message *dnsmessage.Message) uint16 {
 	}
 
 	return uint16(maxTTL)
+}
+
+// EncodedQuestion base64 encoded question
+func EncodedQuestion(message *dnsmessage.Message) string {
+	question := message.Questions[0].GoString()
+	data := []byte(question)
+	return base64.URLEncoding.EncodeToString(data)
 }

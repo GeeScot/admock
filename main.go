@@ -47,9 +47,9 @@ func isDomainBlacklisted(message *dnsmessage.Message) ([]byte, bool) {
 }
 
 func isDomainCached(message *dnsmessage.Message) ([]byte, bool) {
-	domain := dns.Domain(message)
+	encodedQuestion := dns.EncodedQuestion(message)
 
-	records, found := dnsCache.Get(domain)
+	records, found := dnsCache.Get(encodedQuestion)
 	if !found {
 		return nil, false
 	}
@@ -68,13 +68,14 @@ func addCache(record []byte) {
 	err := m.Unpack(record)
 	catch(err)
 
-	domain := dns.Domain(&m)
 	if len(m.Answers) <= 0 {
 		return
 	}
 
+	encodedQuestion := dns.EncodedQuestion(&m)
 	ttl := dns.TTL(&m)
-	dnsCache.AddWithExpiry(domain, m.Answers, time.Duration(ttl))
+
+	dnsCache.AddWithExpiry(encodedQuestion, m.Answers, time.Duration(ttl))
 }
 
 func handleQuery(conn *net.UDPConn, addr *net.UDPAddr, message *dnsmessage.Message) {
