@@ -10,8 +10,8 @@ import (
 
 	"github.com/gurparit/fastdns/acl"
 	"github.com/gurparit/fastdns/cache"
-	"github.com/gurparit/fastdns/cloudflare"
 	"github.com/gurparit/fastdns/dns"
+	"github.com/gurparit/fastdns/upstream"
 	"golang.org/x/net/dns/dnsmessage"
 )
 
@@ -88,7 +88,7 @@ func handleQuery(conn *net.UDPConn, addr *net.UDPAddr, message *dnsmessage.Messa
 		return
 	}
 
-	dns, err := cloudflare.AskQuestion(message)
+	dns, err := upstream.AskQuestion(message)
 	catch(err)
 
 	addCache(dns)
@@ -132,6 +132,8 @@ func catch(err error) {
 }
 
 func main() {
+	upstream.Pool = dns.NewPool()
+
 	blacklist = cache.Strings()
 	dnsCache = cache.Resources()
 
