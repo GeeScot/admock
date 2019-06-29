@@ -6,6 +6,8 @@ Type=simple
 Restart=always
 RestartSec=5s
 Environment=FASTDNS_CONFIG=/etc/fastdns/config.json
+Environment=FASTDNS_DNS1=1.1.1.1
+Environment=FASTDNS_DNS2=1.0.0.1
 ExecStart=/usr/local/bin/fastdns
 
 [Install]
