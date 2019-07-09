@@ -11,6 +11,7 @@ import (
 	"github.com/gurparit/fastdns/acl"
 	"github.com/gurparit/fastdns/cache"
 	"github.com/gurparit/fastdns/dns"
+	"github.com/gurparit/fastdns/pool"
 	"github.com/gurparit/fastdns/upstream"
 	"golang.org/x/net/dns/dnsmessage"
 )
@@ -89,7 +90,7 @@ func handleQuery(conn *net.UDPConn, addr *net.UDPAddr, message *dnsmessage.Messa
 		return
 	}
 
-	dns, err := upstream.AskQuestion(message)
+	dns, err := u.AskQuestion(message)
 	catch(err)
 
 	addCache(dns)
@@ -119,6 +120,22 @@ var blacklist *cache.StringCache
 var dnsCache *cache.ResourceCache
 
 var wg sync.WaitGroup
+var u *upstream.Upstream
+
+func main() {
+	p := pool.NewRoundRobin()
+	u = &upstream.Upstream{Pool: p}
+
+	blacklist = cache.Strings()
+	dnsCache = cache.Resources()
+
+	wg.Add(1)
+
+	go run()
+	go acl.Load(blacklist)
+
+	wg.Wait()
+}
 
 func try() {
 	if r := recover(); r != nil {
@@ -130,18 +147,4 @@ func catch(err error) {
 	if err != nil {
 		panic(err)
 	}
-}
-
-func main() {
-	upstream.Pool = dns.NewPool()
-
-	blacklist = cache.Strings()
-	dnsCache = cache.Resources()
-
-	wg.Add(1)
-
-	go run()
-	go acl.Load(blacklist)
-
-	wg.Wait()
 }
