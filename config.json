@@ -1,27 +1,13 @@
 {
   "external": {
     "blacklists": [
-      "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts",
-      "https://mirror1.malwaredomains.com/files/justdomains",
-      "http://sysctl.org/cameleon/hosts",
-      "https://s3.amazonaws.com/lists.disconnect.me/simple_tracking.txt",
-      "https://s3.amazonaws.com/lists.disconnect.me/simple_ad.txt",
-      "https://hosts-file.net/ad_servers.txt"
+      "https://raw.githubusercontent.com/gurparit/go-aggregate/master/blacklist.txt"
     ]
   },
   "blacklist": [
-    "facebook.com"
+    "facebook.com.",
+    "www.facebook.com.",
+    "coinhive.com."
   ],
-  "whitelist": [
-    "apple.com",
-    "icloud.com",
-    "twitter.com",
-    "wikipedia.org",
-    "en.wikipedia.org",
-    "google.com",
-    "github.com",
-    "raw.githubusercontent.com",
-    "localhost.localdomain",
-    "255.255.255.255"
-  ]
+  "whitelist": []
 }

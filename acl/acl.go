@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"regexp"
+	"strings"
 	"sync"
 	"time"
 
@@ -40,8 +40,7 @@ func fetchBlacklist(wg *sync.WaitGroup, c *cache.StringCache, source string, whi
 		return
 	}
 
-	domainsRegex, _ := regexp.Compile("(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]")
-	domains := domainsRegex.FindAllString(data, -1)
+	domains := strings.Split(data, "\n")
 	for _, domain := range domains {
 		if array.Contains(whitelist, domain) {
 			continue
