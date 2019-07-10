@@ -12,7 +12,6 @@ import (
 	"github.com/gurparit/fastdns/cache"
 	"github.com/gurparit/fastdns/dns"
 	"github.com/gurparit/fastdns/pool"
-	"github.com/gurparit/fastdns/upstream"
 	"golang.org/x/net/dns/dnsmessage"
 )
 
@@ -120,11 +119,11 @@ var blacklist *cache.StringCache
 var dnsCache *cache.ResourceCache
 
 var wg sync.WaitGroup
-var u *upstream.Upstream
+var u *dns.Upstream
 
 func main() {
 	p := pool.NewRoundRobin()
-	u = &upstream.Upstream{Pool: p}
+	u = &dns.Upstream{Pool: p}
 
 	blacklist = cache.Strings()
 	dnsCache = cache.Resources()

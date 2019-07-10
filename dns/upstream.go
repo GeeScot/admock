@@ -1,4 +1,4 @@
-package upstream
+package dns
 
 import (
 	"encoding/base64"
