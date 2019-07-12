@@ -62,7 +62,7 @@ func Load(cache *cache.StringCache) {
 		}
 	}
 
-	start := time.Now().Unix()
+	start := time.Now().UnixNano()
 
 	var wg sync.WaitGroup
 	for _, source := range lists.Sources {
@@ -78,8 +78,8 @@ func Load(cache *cache.StringCache) {
 
 	cache.Sort()
 
-	end := time.Now().Unix()
+	end := time.Now().UnixNano()
 	elapsed := end - start
 
-	fmt.Printf("\nBlacklisted %d domains in %d seconds.\n", cache.Size, elapsed)
+	fmt.Printf("Blacklisted: %d domains (in %dms).\n", cache.Size, time.Duration(elapsed)/time.Millisecond)
 }
