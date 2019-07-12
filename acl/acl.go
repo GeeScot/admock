@@ -49,8 +49,6 @@ func fetchBlacklist(wg *sync.WaitGroup, c *cache.StringCache, source string, whi
 	fmt.Printf("Done: %s\n", source)
 }
 
-const fallbackBlacklist = "https://raw.githubusercontent.com/geescot/go-aggregate/master/blacklist.txt"
-
 // Load cache all blacklists
 func Load(cache *cache.StringCache) {
 	var lists AccessControlLists
@@ -60,7 +58,7 @@ func Load(cache *cache.StringCache) {
 		fileio.ReadJSON(config, &lists)
 	} else {
 		lists = AccessControlLists{
-			Sources: []string{fallbackBlacklist},
+			Sources: []string{"https://raw.githubusercontent.com/geescot/go-aggregate/master/blacklist.txt"},
 		}
 	}
 
