@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/gurparit/fastdns/env"
+	"github.com/gurparit/go-common/env"
 )
 
 // RoundRobin a pool representing a round robin list
