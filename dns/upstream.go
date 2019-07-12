@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gurparit/fastdns/pool"
-	"github.com/gurparit/go-common/httputil"
+	"github.com/geescot/fastdns/pool"
+	"github.com/geescot/go-common/httputil"
 	"golang.org/x/net/dns/dnsmessage"
 )
 

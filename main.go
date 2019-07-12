@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gurparit/fastdns/acl"
-	"github.com/gurparit/fastdns/cache"
-	"github.com/gurparit/fastdns/dns"
-	"github.com/gurparit/fastdns/pool"
+	"github.com/geescot/fastdns/acl"
+	"github.com/geescot/fastdns/cache"
+	"github.com/geescot/fastdns/dns"
+	"github.com/geescot/fastdns/pool"
 	"golang.org/x/net/dns/dnsmessage"
 )
 

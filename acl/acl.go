@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gurparit/fastdns/cache"
-	"github.com/gurparit/go-common/array"
-	"github.com/gurparit/go-common/fileio"
-	"github.com/gurparit/go-common/httputil"
+	"github.com/geescot/fastdns/cache"
+	"github.com/geescot/go-common/array"
+	"github.com/geescot/go-common/fileio"
+	"github.com/geescot/go-common/httputil"
 )
 
 // AccessControlLists access control source file
@@ -49,6 +49,8 @@ func fetchBlacklist(wg *sync.WaitGroup, c *cache.StringCache, source string, whi
 	fmt.Printf("Done: %s\n", source)
 }
 
+const fallbackBlacklist = "https://raw.githubusercontent.com/geescot/go-aggregate/master/blacklist.txt"
+
 // Load cache all blacklists
 func Load(cache *cache.StringCache) {
 	var lists AccessControlLists
@@ -58,7 +60,7 @@ func Load(cache *cache.StringCache) {
 		fileio.ReadJSON(config, &lists)
 	} else {
 		lists = AccessControlLists{
-			Sources: []string{"https://raw.githubusercontent.com/gurparit/go-aggregate/master/blacklist.txt"},
+			Sources: []string{fallbackBlacklist},
 		}
 	}
 

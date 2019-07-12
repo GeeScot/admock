@@ -3,7 +3,7 @@ package dns
 import (
 	"encoding/base64"
 
-	"github.com/gurparit/go-common/math"
+	"github.com/geescot/go-common/math"
 	"golang.org/x/net/dns/dnsmessage"
 )
 

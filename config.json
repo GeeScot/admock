@@ -1,6 +1,6 @@
 {
   "sources": [
-    "https://raw.githubusercontent.com/gurparit/go-aggregate/master/blacklist.txt"
+    "https://raw.githubusercontent.com/geescot/go-aggregate/master/blacklist.txt"
   ],
   "blacklist": [
     "facebook.com.",

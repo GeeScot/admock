@@ -4,8 +4,8 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/gurparit/go-common/array"
-	"github.com/gurparit/go-common/math"
+	"github.com/geescot/go-common/array"
+	"github.com/geescot/go-common/math"
 )
 
 // StringCache simple sorted key cache
