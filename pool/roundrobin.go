@@ -1,8 +1,10 @@
 package pool
 
 import (
-	"os"
+	"fmt"
 	"sync"
+
+	"github.com/gurparit/fastdns/env"
 )
 
 // RoundRobin a pool representing a round robin list
@@ -13,10 +15,16 @@ type RoundRobin struct {
 	index     int
 }
 
+const cloudflareDNS1 = "1.1.1.1"
+const cloudflareDNS2 = "1.0.0.1"
+
 // NewRoundRobin pool with dns servers
 func NewRoundRobin() Pool {
-	dns1 := os.Getenv("FASTDNS_DNS1")
-	dns2 := os.Getenv("FASTDNS_DNS2")
+	dns1 := env.Optional("FASTDNS_DNS1", cloudflareDNS1)
+	dns2 := env.Optional("FASTDNS_DNS2", cloudflareDNS2)
+
+	fmt.Printf("DNS1: %s\n", dns1)
+	fmt.Printf("DNS2: %s\n", dns2)
 
 	list := []string{}
 	if len(dns1) > 0 {

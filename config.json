@@ -1,9 +1,7 @@
 {
-  "external": {
-    "blacklists": [
-      "https://raw.githubusercontent.com/gurparit/go-aggregate/master/blacklist.txt"
-    ]
-  },
+  "sources": [
+    "https://raw.githubusercontent.com/gurparit/go-aggregate/master/blacklist.txt"
+  ],
   "blacklist": [
     "facebook.com.",
     "www.facebook.com.",

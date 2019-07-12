@@ -52,7 +52,9 @@ func (sc *StringCache) Sort() {
 	sc.mux.Lock()
 	defer sc.mux.Unlock()
 
-	sort.Strings(sc.data)
+	if !sort.StringsAreSorted(sc.data) {
+		sort.Strings(sc.data)
+	}
 }
 
 // Contains check if cache contains a value

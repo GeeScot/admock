@@ -16,10 +16,7 @@ import (
 
 // AccessControlLists access control source file
 type AccessControlLists struct {
-	External struct {
-		Blacklists []string `json:"blacklists"`
-	} `json:"external"`
-
+	Sources   []string `json:"sources"`
 	Blacklist []string `json:"blacklist"`
 	Whitelist []string `json:"whitelist"`
 }
@@ -54,18 +51,21 @@ func fetchBlacklist(wg *sync.WaitGroup, c *cache.StringCache, source string, whi
 
 // Load cache all blacklists
 func Load(cache *cache.StringCache) {
-	config := os.Getenv("FASTDNS_CONFIG")
-	if len(config) <= 0 {
-		return
-	}
-
 	var lists AccessControlLists
-	fileio.ReadJSON(config, &lists)
+
+	config, ok := os.LookupEnv("FASTDNS_CONFIG")
+	if ok {
+		fileio.ReadJSON(config, &lists)
+	} else {
+		lists = AccessControlLists{
+			Sources: []string{"https://raw.githubusercontent.com/gurparit/go-aggregate/master/blacklist.txt"},
+		}
+	}
 
 	start := time.Now().Unix()
 
 	var wg sync.WaitGroup
-	for _, source := range lists.External.Blacklists {
+	for _, source := range lists.Sources {
 		wg.Add(1)
 		go fetchBlacklist(&wg, cache, source, lists.Whitelist)
 	}
