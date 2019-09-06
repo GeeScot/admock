@@ -3,9 +3,9 @@ FastDNS: fast as in quick to set up for DNS over HTTPS with network level ad-blo
 
 # docker setup
 ```
-docker build -t gurparit/fastdns .
+docker build -t fastdns .
 docker run \
  -d -p 53:53/udp \
  --restart=unless-stopped \
- --name fastdns gurparit/fastdns
+ --name fastdns fastdns
 ```
