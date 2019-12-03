@@ -12,6 +12,8 @@ import (
 	"github.com/geescot/fastdns/cache"
 	"github.com/geescot/fastdns/dns"
 	"github.com/geescot/fastdns/pool"
+	"github.com/geescot/fastdns/upstream"
+	"github.com/geescot/go-common/env"
 	"golang.org/x/net/dns/dnsmessage"
 )
 
@@ -96,6 +98,20 @@ func handleQuery(conn *net.UDPConn, addr *net.UDPAddr, message *dnsmessage.Messa
 	conn.WriteToUDP(dns, addr)
 }
 
+func setupUpstream() {
+	p := pool.NewRoundRobin()
+
+	strategy := env.Optional("FASTDNS_STRATEGY", "https")
+	switch strategy {
+	case "https":
+		u = &upstream.HTTPSUpstream{Pool: p}
+		break
+	case "udp":
+		u = &upstream.UDPUpstream{Pool: p}
+		break
+	}
+}
+
 func run() {
 	conn, err := net.ListenUDP("udp", &net.UDPAddr{Port: 53})
 	if err != nil {
@@ -119,14 +135,13 @@ var blacklist *cache.StringCache
 var dnsCache *cache.ResourceCache
 
 var wg sync.WaitGroup
-var u *dns.Upstream
+var u upstream.Upstream
 
 func main() {
-	p := pool.NewRoundRobin()
-	u = &dns.Upstream{Pool: p}
-
 	blacklist = cache.Strings()
 	dnsCache = cache.Resources()
+
+	setupUpstream()
 
 	wg.Add(1)
 

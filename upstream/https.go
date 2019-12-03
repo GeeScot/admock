@@ -1,4 +1,4 @@
-package dns
+package upstream
 
 import (
 	"encoding/base64"
@@ -13,13 +13,13 @@ import (
 // QueryBaseURL base URL for HTTPS DNS query
 const QueryBaseURL = "https://%s/dns-query?dns=%s"
 
-// Upstream struct to hold pool for AskQuestion
-type Upstream struct {
+// HTTPSUpstream HTTPS Struct
+type HTTPSUpstream struct {
 	Pool pool.Pool
 }
 
 // AskQuestion send DNS request to Cloudflare via HTTPS
-func (u *Upstream) AskQuestion(m *dnsmessage.Message) ([]byte, error) {
+func (u *HTTPSUpstream) AskQuestion(m *dnsmessage.Message) ([]byte, error) {
 	packed, err := m.Pack()
 	if err != nil {
 		panic(err)
