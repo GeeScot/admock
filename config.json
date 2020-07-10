@@ -1,0 +1,9 @@
+{
+  "sources": [
+    {
+      "url": "https://raw.githubusercontent.com/codescot/blackhole/master/default.txt",
+      "md5": "https://raw.githubusercontent.com/codescot/blackhole/master/default.md5"
+    }
+  ],
+  "blacklist": []
+}

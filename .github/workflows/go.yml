@@ -1,0 +1,64 @@
+name: Go
+on: [push]
+jobs:
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Set up Go 1.13
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.13
+      id: go
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v1
+
+    - name: Get dependencies
+      run: |
+        go get -v -t -d ./...
+        if [ -f Gopkg.toml ]; then
+            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+            dep ensure
+        fi
+
+    - name: Create artifacts directory
+      run: mkdir -p artifacts/{macos,windows,linux,arm}
+      
+    - name: Build macos
+      run: GOOS=darwin GOARCH=amd64 go build -o artifacts/macos/admock
+    
+    - name: Build windows
+      run: GOOS=windows GOARCH=amd64 go build -o artifacts/windows/admock.exe
+    
+    - name: Build linux
+      run: GOOS=linux GOARCH=amd64 go build -o artifacts/linux/admock
+    
+    - name: Build arm
+      run: GOOS=linux GOARCH=arm go build -o artifacts/arm/admock
+      
+    - name: Upload macos artifact
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        name: admock-macos
+        path: artifacts/macos/admock
+    
+    - name: Upload windows artifact
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        name: admock-windows
+        path: artifacts/windows/admock.exe
+    
+    - name: Upload linux artifact
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        name: admock-linux
+        path: artifacts/linux/admock
+    
+    - name: Upload arm artifact
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        name: admock-arm
+        path: artifacts/arm/admock

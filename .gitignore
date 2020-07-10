@@ -1,0 +1,6 @@
+bin
+admock
+admock.exe
+build.sh
+.DS_Store
+.env*
